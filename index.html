@@ -167,6 +167,33 @@
     z-index: 999; display: none; white-space: nowrap;
   }
   .notif.err { background: #3a1a1a; border-color: #e05555; color: #e05555; }
+
+  /* CUSTOM MODAL CSS */
+  .custom-modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(10, 15, 20, 0.8); display: flex; align-items: center;
+    justify-content: center; z-index: 1000; opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+  }
+  .custom-modal.show { opacity: 1; pointer-events: auto; }
+  .modal-content {
+    background: #182330; border: 1px solid #1e3248; border-radius: 16px;
+    padding: 2rem; max-width: 450px; width: 90%; text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 1rem; color: #e8edf2; }
+  .modal-text { font-size: 14px; color: #8899aa; margin-bottom: 1.5rem; line-height: 1.6; }
+  .modal-buttons { display: flex; justify-content: center; gap: 12px; }
+  .btn-modal-confirm {
+    background: #e05555; color: white; border: none; padding: 10px 20px;
+    border-radius: 8px; cursor: pointer; font-family: 'Tajawal', sans-serif; font-weight: 700;
+  }
+  .btn-modal-cancel {
+    background: #1e3248; color: #e8edf2; border: 1px solid #2e435a; padding: 10px 20px;
+    border-radius: 8px; cursor: pointer; font-family: 'Tajawal', sans-serif;
+  }
+  .btn-modal-confirm:hover { background: #f06666; }
+  .btn-modal-cancel:hover { background: #263e58; }
 </style>
 </head>
 <body>
@@ -175,6 +202,18 @@
 <div id="loading-overlay" class="loading-overlay">
   <div class="spinner"></div>
   <div class="loading-text" id="loading-text">جاري التحميل...</div>
+</div>
+
+<!-- CUSTOM CONFIRM MODAL -->
+<div id="confirm-modal" class="custom-modal">
+  <div class="modal-content">
+    <div class="modal-title" id="confirm-title">تأكيد الإجراء</div>
+    <div class="modal-text" id="confirm-text">هل أنت متأكد من رغبتك في حذف هذا العنصر؟</div>
+    <div class="modal-buttons">
+      <button class="btn-modal-confirm" id="confirm-yes-btn">حذف</button>
+      <button class="btn-modal-cancel" onclick="closeConfirmModal()">إلغاء</button>
+    </div>
+  </div>
 </div>
 
 <!-- LOGIN -->
@@ -200,7 +239,9 @@
       <span class="topbar-title">فُرقان — منصة القياس</span>
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
-      <span class="sync-indicator" id="sync-status"><i class="ti ti-circle-check" style="color:#4ade80"></i> متصل بـ Google Sheets</span>
+      <span class="sync-indicator" id="sync-status">
+        <i class="ti ti-circle-dot" style="color:#e05555; animation: pulse 1.5s infinite;"></i> جاري الاتصال بالسحابة...
+      </span>
       <button class="btn-logout" onclick="logout()"><i class="ti ti-logout"></i> خروج</button>
     </div>
   </div>
@@ -208,11 +249,11 @@
   <div class="main">
     <!-- DASHBOARD -->
     <div id="dashboard">
-      <p style="font-size:14px;color:#8899aa;margin-bottom:1.5rem;">مرحباً — اختر القسم المطلوب</p>
+      <p style="font-size:14px;color:#8899aa;margin-bottom:1.5rem;">مرحباً — اختر القسم المطلوب لتبدأ المزامنة الحية</p>
 
       <div class="sheet-banner">
-        <i class="ti ti-brand-google"></i>
-        <span>البيانات مخزنة في Google Sheets — أي تغيير يظهر فوراً للجميع</span>
+        <i class="ti ti-cloud-check"></i>
+        <span id="banner-text">البيانات متزامنة سحابياً بشكل لحظي — أي تعديل يظهر فوراً للطرف الآخر دون تحديث</span>
       </div>
 
       <div class="dash-grid">
@@ -220,25 +261,25 @@
           <div class="dash-icon">📋</div>
           <div class="dash-card-title">بطاقات القياس</div>
           <div class="dash-card-sub">رفع وإدارة بطاقات التقييم</div>
-          <div class="dash-card-count" id="count-bataqat">—</div>
+          <div class="dash-card-count" id="count-bataqat">0 عنصر</div>
         </div>
         <div class="dash-card" onclick="openSection('natayij')">
           <div class="dash-icon">📊</div>
           <div class="dash-card-title">نتائج القياس</div>
           <div class="dash-card-sub">عرض وأرشفة النتائج</div>
-          <div class="dash-card-count" id="count-natayij">—</div>
+          <div class="dash-card-count" id="count-natayij">0 عنصر</div>
         </div>
         <div class="dash-card" onclick="openSection('mutabaa')">
           <div class="dash-icon">🔄</div>
           <div class="dash-card-title">نظام المتابعة</div>
           <div class="dash-card-sub">متابعة الأداء والتقدم</div>
-          <div class="dash-card-count" id="count-mutabaa">—</div>
+          <div class="dash-card-count" id="count-mutabaa">0 عنصر</div>
         </div>
         <div class="dash-card" onclick="openSection('irsaal')">
           <div class="dash-icon">📤</div>
           <div class="dash-card-title">الإرسال والتواصل</div>
           <div class="dash-card-sub">إرسال الملفات والروابط</div>
-          <div class="dash-card-count" id="count-irsaal">—</div>
+          <div class="dash-card-count" id="count-irsaal">0 عنصر</div>
         </div>
       </div>
     </div>
@@ -277,316 +318,430 @@
 
 <input type="file" id="global-file-input" class="hidden-file" multiple>
 
-<script>
-// ========== CONFIG ==========
-const PIN = "1234"; // ← غيّر الرقم السري هنا
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZ-cFBv1Buu5VeppbpU3rgrTv7lNfVNdTAll6CqcZeXcPe7__CveQ5uIEuM2Hlua89/exec";
-const SECTIONS = ["bataqat","natayij","mutabaa","irsaal"];
+<!-- FIREBASE INTEGRATION SCRIPT -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+  import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+  import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// ========== STATE ==========
-let data = { bataqat:[], natayij:[], mutabaa:[], irsaal:[] };
-let currentSection = null;
-let uploadTab = {};
+  // Configuration setup
+  const appId = typeof __app_id !== 'undefined' ? __app_id : 'furqan-measuring-platform-realtime';
+  const firebaseConfig = JSON.parse(__firebase_config);
+  
+  // Init Firebase services
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-// ========== AUTH ==========
-function doLogin() {
-  if (document.getElementById("pin-field").value === PIN) {
-    document.getElementById("login-screen").style.display = "none";
-    document.getElementById("app").style.display = "flex";
-    loadAllFromSheet();
-  } else {
-    document.getElementById("login-err").style.display = "block";
-    document.getElementById("pin-field").value = "";
-  }
-}
-function logout() {
-  document.getElementById("login-screen").style.display = "flex";
-  document.getElementById("app").style.display = "none";
-  document.getElementById("pin-field").value = "";
-  document.getElementById("login-err").style.display = "none";
-  goBack();
-}
+  // App State
+  let currentUser = null;
+  let itemsList = []; 
+  const SECTIONS = ["bataqat", "natayij", "mutabaa", "irsaal"];
+  let uploadTab = {};
 
-// ========== LOADING ==========
-function showLoading(msg) {
-  document.getElementById("loading-text").textContent = msg || "جاري التحميل...";
-  document.getElementById("loading-overlay").classList.add("show");
-}
-function hideLoading() {
-  document.getElementById("loading-overlay").classList.remove("show");
-}
+  // DOM Elements & Bindings to window
+  window.doLogin = doLogin;
+  window.logout = logout;
+  window.openSection = openSection;
+  window.goBack = goBack;
+  window.setTab = setTab;
+  window.triggerFileUpload = triggerFileUpload;
+  window.addUrl = addUrl;
+  window.deleteItem = deleteItem;
+  window.downloadFile = downloadFile;
+  window.closeConfirmModal = closeConfirmModal;
 
-// ========== GOOGLE SHEETS API ==========
-function callSheet(params) {
-  return new Promise((resolve, reject) => {
-    const cbName = "cb_" + Date.now() + "_" + Math.floor(Math.random()*9999);
-    const url = new URL(SCRIPT_URL);
-    Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, typeof v === "object" ? JSON.stringify(v) : v));
-    url.searchParams.set("callback", cbName);
-    window[cbName] = (data) => {
-      delete window[cbName];
-      document.getElementById("jsonp-"+cbName)?.remove();
-      resolve(data);
-    };
-    const script = document.createElement("script");
-    script.id = "jsonp-" + cbName;
-    script.src = url.toString();
-    script.onerror = () => { delete window[cbName]; reject(new Error("JSONP error")); };
-    document.body.appendChild(script);
-    setTimeout(() => { delete window[cbName]; document.getElementById("jsonp-"+cbName)?.remove(); reject(new Error("timeout")); }, 15000);
-  });
-}
+  const PIN = "1234"; // الرقم السري للمنصة
 
-async function loadAllFromSheet() {
-  showLoading("جاري تحميل البيانات من Google Sheets...");
-  try {
-    for (const sec of SECTIONS) {
-      const result = await callSheet({ action: "get", section: sec });
-      if (result && result.data) {
-        data[sec] = result.data;
+  // Authenticaton Flow
+  async function initAuth() {
+    try {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInWithCustomToken(auth, __initial_auth_token);
+      } else {
+        await signInAnonymously(auth);
       }
+    } catch (err) {
+      console.error("Authentication failed", err);
+      showNotif("⚠️ فشل الاتصال بقاعدة البيانات. حاول مرة أخرى.", true);
     }
-    updateCounts();
-  } catch(e) {
-    showNotif("⚠️ تعذر الاتصال — يعمل بشكل محلي", true);
-    loadLocal();
   }
-  hideLoading();
-}
 
-async function addToSheet(section, item) {
-  try {
-    await callSheet({ action: "add", section, item });
-  } catch(e) {
-    console.warn("Sheet sync failed", e);
-  }
-}
-
-async function deleteFromSheet(section, id) {
-  try {
-    await callSheet({ action: "delete", section, id });
-  } catch(e) {
-    console.warn("Sheet delete failed", e);
-  }
-}
-
-// ========== LOCAL FALLBACK ==========
-function loadLocal() {
-  const saved = localStorage.getItem("furqan_data");
-  if (saved) data = JSON.parse(saved);
-  updateCounts();
-}
-function saveLocal() {
-  localStorage.setItem("furqan_data", JSON.stringify(data));
-}
-
-// ========== COUNTS ==========
-function updateCounts() {
-  SECTIONS.forEach(s => {
-    const el = document.getElementById("count-"+s);
-    if (el) el.textContent = (data[s]||[]).length + " عنصر";
+  // Monitor auth state and subscribe to Firestore changes
+  onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    if (user) {
+      updateSyncStatus(true);
+      // Run Firestore listener
+      subscribeToItems();
+    } else {
+      updateSyncStatus(false);
+    }
   });
-}
 
-// ========== NAV ==========
-function openSection(name) {
-  document.getElementById("dashboard").style.display = "none";
-  SECTIONS.forEach(s => document.getElementById("sec-"+s).classList.remove("active"));
-  document.getElementById("sec-"+name).classList.add("active");
-  currentSection = name;
-  renderSection(name);
-}
-function goBack() {
-  document.getElementById("dashboard").style.display = "block";
-  SECTIONS.forEach(s => document.getElementById("sec-"+s).classList.remove("active"));
-  currentSection = null;
-  updateCounts();
-}
+  // Start Auth
+  initAuth();
 
-// ========== RENDER ==========
-function renderSection(name) {
-  const container = document.getElementById("content-"+name);
-  const items = data[name] || [];
-  const curTab = uploadTab[name] || "file";
+  // Firestore Realtime Subscription (Strict Path Protocol)
+  function subscribeToItems() {
+    if (!currentUser) return;
 
-  container.innerHTML = `
-    <div class="upload-box">
-      <div class="upload-tabs">
-        <button class="tab-btn ${curTab==='file'?'active':''}" onclick="setTab('${name}','file')">
-          <i class="ti ti-upload"></i> رفع ملف من الجهاز
-        </button>
-        <button class="tab-btn ${curTab==='url'?'active':''}" onclick="setTab('${name}','url')">
-          <i class="ti ti-link"></i> إضافة رابط
-        </button>
-      </div>
-      <div class="upload-pane ${curTab==='file'?'active':''}">
-        <div class="file-drop" onclick="triggerFileUpload('${name}')">
-          <i class="ti ti-cloud-upload"></i>
-          <span>اضغط لاختيار ملف أو اسحب وأفلت</span><br>
-          <span style="font-size:12px;color:#8899aa;margin-top:4px;display:block">يدعم جميع أنواع الملفات</span>
-        </div>
-      </div>
-      <div class="upload-pane ${curTab==='url'?'active':''}">
-        <div class="url-row">
-          <input type="text" id="url-name-${name}" class="url-name-input" placeholder="اسم الرابط">
-          <input type="text" id="url-val-${name}" class="url-input" placeholder="https://...">
-          <button class="btn-add" id="btn-addurl-${name}" onclick="addUrl('${name}')">
-            <i class="ti ti-plus"></i> إضافة
+    // RULE 1: Strict Paths
+    const publicCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'furqan_items');
+
+    // RULE 2: No Complex Queries, fetch all and filter/sort in memory
+    onSnapshot(publicCollectionRef, (snapshot) => {
+      itemsList = [];
+      snapshot.forEach((doc) => {
+        itemsList.push({ id: doc.id, ...doc.data() });
+      });
+
+      // Sort items globally by date or createdAt
+      itemsList.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+      updateCounts();
+      if (window.currentSectionName) {
+        renderSection(window.currentSectionName);
+      }
+    }, (error) => {
+      console.error("Firestore sync error:", error);
+      showNotif("⚠️ خطأ في مزامنة البيانات.", true);
+    });
+  }
+
+  // Update Indicator
+  function updateSyncStatus(connected) {
+    const statusEl = document.getElementById("sync-status");
+    if (connected) {
+      statusEl.innerHTML = `<i class="ti ti-circle-check" style="color:#4ade80"></i> متصل بالسحابة · مزامنة لحظية نشطة`;
+    } else {
+      statusEl.innerHTML = `<i class="ti ti-circle-dot" style="color:#e05555"></i> غير متصل بالسحابة`;
+    }
+  }
+
+  // LOGIN SCREEN LOGIC
+  function doLogin() {
+    const fieldVal = document.getElementById("pin-field").value;
+    if (fieldVal === PIN) {
+      document.getElementById("login-screen").style.display = "none";
+      document.getElementById("app").style.display = "flex";
+      showNotif("✅ مرحباً بك في منصة فُرقان");
+    } else {
+      document.getElementById("login-err").style.display = "block";
+      document.getElementById("pin-field").value = "";
+    }
+  }
+
+  function logout() {
+    document.getElementById("login-screen").style.display = "flex";
+    document.getElementById("app").style.display = "none";
+    document.getElementById("pin-field").value = "";
+    document.getElementById("login-err").style.display = "none";
+    goBack();
+  }
+
+  // NAVIGATION
+  function openSection(name) {
+    document.getElementById("dashboard").style.display = "none";
+    SECTIONS.forEach(s => document.getElementById("sec-"+s).classList.remove("active"));
+    document.getElementById("sec-"+name).classList.add("active");
+    window.currentSectionName = name;
+    renderSection(name);
+  }
+
+  function goBack() {
+    document.getElementById("dashboard").style.display = "block";
+    SECTIONS.forEach(s => document.getElementById("sec-"+s).classList.remove("active"));
+    window.currentSectionName = null;
+    updateCounts();
+  }
+
+  // UPDATE COUNTS
+  function updateCounts() {
+    SECTIONS.forEach(s => {
+      const el = document.getElementById("count-"+s);
+      const filteredCount = itemsList.filter(item => item.section === s).length;
+      if (el) el.textContent = filteredCount + " عنصر";
+    });
+  }
+
+  // RENDER INTERFACES
+  function renderSection(name) {
+    const container = document.getElementById("content-"+name);
+    const sectionItems = itemsList.filter(item => item.section === name);
+    const curTab = uploadTab[name] || "file";
+
+    container.innerHTML = `
+      <div class="upload-box">
+        <div class="upload-tabs">
+          <button class="tab-btn ${curTab==='file'?'active':''}" onclick="setTab('${name}','file')">
+            <i class="ti ti-upload"></i> رفع ملف من الجهاز
+          </button>
+          <button class="tab-btn ${curTab==='url'?'active':''}" onclick="setTab('${name}','url')">
+            <i class="ti ti-link"></i> إضافة رابط
           </button>
         </div>
+        <div class="upload-pane ${curTab==='file'?'active':''}">
+          <div class="file-drop" onclick="triggerFileUpload('${name}')">
+            <i class="ti ti-cloud-upload"></i>
+            <span>اضغط لاختيار ملف أو اسحب وأفلت هنا</span><br>
+            <span style="font-size:12px;color:#8899aa;margin-top:4px;display:block">يدعم جميع أنواع الملفات حتى 800 كيلوبايت</span>
+          </div>
+        </div>
+        <div class="upload-pane ${curTab==='url'?'active':''}">
+          <div class="url-row">
+            <input type="text" id="url-name-${name}" class="url-name-input" placeholder="اسم الرابط">
+            <input type="text" id="url-val-${name}" class="url-input" placeholder="https://...">
+            <button class="btn-add" id="btn-addurl-${name}" onclick="addUrl('${name}')">
+              <i class="ti ti-plus"></i> إضافة الرابط
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="files-list" id="list-${name}">
-      ${items.length === 0
-        ? `<div class="empty-state"><i class="ti ti-inbox"></i>لا توجد ملفات أو روابط بعد</div>`
-        : items.map((item,i) => renderItem(name,item,i)).join("")}
-    </div>
-  `;
-}
-
-function renderItem(name, item, i) {
-  const isUrl = item.type === "url";
-  const icon = isUrl ? "ti-link" : getFileIcon(item.name);
-  const tag = isUrl
-    ? `<span class="status-tag tag-url">رابط</span>`
-    : `<span class="status-tag tag-file">ملف</span>`;
-  const openBtn = isUrl
-    ? `<button class="btn-open" onclick="window.open('${escHtml(item.url)}','_blank')"><i class="ti ti-external-link"></i> فتح</button>`
-    : (item.dataUrl
-        ? `<button class="btn-open" onclick="downloadFile('${name}',${i})"><i class="ti ti-download"></i> تنزيل</button>`
-        : `<button class="btn-open" disabled style="opacity:0.4">غير متاح</button>`);
-  return `
-    <div class="file-item" id="item-${name}-${i}">
-      <i class="ti ${icon} file-item-icon"></i>
-      <div class="file-item-info">
-        <div class="file-item-name" title="${escHtml(item.name)}">${escHtml(item.name)}</div>
-        <div class="file-item-meta">${tag} ${item.date||""} ${item.size ? '· '+item.size : ''}</div>
+      <div class="files-list" id="list-${name}">
+        ${sectionItems.length === 0
+          ? `<div class="empty-state"><i class="ti ti-inbox"></i>لا توجد ملفات أو روابط مضافة هنا بعد</div>`
+          : sectionItems.map((item, i) => renderItemHTML(name, item)).join("")}
       </div>
-      ${openBtn}
-      <button class="btn-del" onclick="deleteItem('${name}',${i})"><i class="ti ti-trash"></i></button>
-    </div>
-  `;
-}
+    `;
+  }
 
-function escHtml(str) {
-  return (str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-}
+  function renderItemHTML(sectionName, item) {
+    const isUrl = item.type === "url";
+    const icon = isUrl ? "ti-link" : getFileIcon(item.name);
+    const tag = isUrl
+      ? `<span class="status-tag tag-url">رابط سحابي</span>`
+      : `<span class="status-tag tag-file">ملف متزامن</span>`;
+    
+    const openBtn = isUrl
+      ? `<button class="btn-open" onclick="window.open('${escHtml(item.url)}','_blank')"><i class="ti ti-external-link"></i> فتح الرابط</button>`
+      : (item.dataUrl
+          ? `<button class="btn-open" onclick="downloadFile('${item.id}')"><i class="ti ti-download"></i> تنزيل الملف</button>`
+          : `<button class="btn-open" disabled style="opacity:0.4">غير متوفر</button>`);
 
-function getFileIcon(name) {
-  if (!name) return "ti-file";
-  const ext = name.split(".").pop().toLowerCase();
-  if (ext==="pdf") return "ti-file-type-pdf";
-  if (["doc","docx"].includes(ext)) return "ti-file-type-doc";
-  if (["xls","xlsx"].includes(ext)) return "ti-file-type-xls";
-  if (["png","jpg","jpeg","gif","webp"].includes(ext)) return "ti-photo";
-  if (["mp4","mov","avi","mkv"].includes(ext)) return "ti-video";
-  if (["zip","rar","7z"].includes(ext)) return "ti-file-zip";
-  if (["ppt","pptx"].includes(ext)) return "ti-presentation";
-  return "ti-file";
-}
+    return `
+      <div class="file-item" id="item-${item.id}">
+        <i class="ti ${icon} file-item-icon"></i>
+        <div class="file-item-info">
+          <div class="file-item-name" title="${escHtml(item.name)}">${escHtml(item.name)}</div>
+          <div class="file-item-meta">${tag} ${item.date||""} ${item.size ? '· '+item.size : ''}</div>
+        </div>
+        ${openBtn}
+        <button class="btn-del" onclick="deleteItem('${sectionName}', '${item.id}')"><i class="ti ti-trash"></i></button>
+      </div>
+    `;
+  }
 
-// ========== TABS ==========
-function setTab(name, tab) {
-  uploadTab[name] = tab;
-  renderSection(name);
-}
+  function setTab(name, tab) {
+    uploadTab[name] = tab;
+    renderSection(name);
+  }
 
-// ========== FILE UPLOAD ==========
-function triggerFileUpload(name) {
-  const inp = document.getElementById("global-file-input");
-  inp.value = "";
-  inp.onchange = (e) => handleFiles(name, e.target.files);
-  inp.click();
-}
+  // FILE UPLOAD HANDLER
+  function triggerFileUpload(name) {
+    const inp = document.getElementById("global-file-input");
+    inp.value = "";
+    inp.onchange = (e) => handleFiles(name, e.target.files);
+    inp.click();
+  }
 
-function handleFiles(name, files) {
-  Array.from(files).forEach(file => {
-    showLoading("جاري رفع: " + file.name);
+  async function handleFiles(sectionName, files) {
+    if (!currentUser) {
+      showNotif("⚠️ أنت غير متصل بالسحابة حالياً", true);
+      return;
+    }
+
+    const file = files[0];
+    if (!file) return;
+
+    // Check size limit (Firestore document limit is 1MB, so let's keep it safe at 800KB max)
+    if (file.size > 800 * 1024) {
+      showCustomAlertModal("الملف كبير جداً!", "حجم الملف يتعدى الحد الأقصى للمزامنة اللحظية (800KB). لضمان الأداء السريع وسرعة المزامنة بين الأجهزة، يُفضل رفع الملف على Google Drive ومشاركة الرابط في قسم 'إضافة رابط'.");
+      return;
+    }
+
+    showLoading("جاري تشفير ورفع الملف للسحابة...");
+
     const reader = new FileReader();
     reader.onload = async (e) => {
-      const item = {
-        id: Date.now() + "_" + Math.random().toString(36).slice(2),
-        type: "file",
-        name: file.name,
-        size: formatSize(file.size),
-        date: new Date().toLocaleDateString("ar-SA"),
-        dataUrl: e.target.result
-      };
-      data[name].push(item);
-      saveLocal();
-      renderSection(name);
-      await addToSheet(name, item);
-      hideLoading();
-      showNotif("✅ تم رفع الملف: " + file.name);
-      updateCounts();
+      try {
+        const itemId = Date.now() + "_" + Math.random().toString(36).slice(2);
+        const itemData = {
+          section: sectionName,
+          type: "file",
+          name: file.name,
+          size: formatSize(file.size),
+          date: new Date().toLocaleDateString("ar-SA"),
+          dataUrl: e.target.result,
+          createdAt: Date.now()
+        };
+
+        // Write to Firestore under the strict path
+        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'furqan_items', itemId);
+        await setDoc(docRef, itemData);
+
+        hideLoading();
+        showNotif("✅ تم رفع وحفظ الملف للجميع!");
+      } catch (err) {
+        console.error("Error saving file:", err);
+        hideLoading();
+        showNotif("⚠️ حدث خطأ أثناء حفظ الملف سحابياً", true);
+      }
     };
     reader.readAsDataURL(file);
-  });
-}
+  }
 
-function formatSize(bytes) {
-  if (bytes < 1024) return bytes + " B";
-  if (bytes < 1048576) return (bytes/1024).toFixed(1) + " KB";
-  return (bytes/1048576).toFixed(1) + " MB";
-}
+  // URL ADDER
+  async function addUrl(sectionName) {
+    if (!currentUser) {
+      showNotif("⚠️ أنت غير متصل بالسحابة", true);
+      return;
+    }
 
-function downloadFile(name, i) {
-  const item = data[name][i];
-  if (!item || !item.dataUrl) return;
-  const a = document.createElement("a");
-  a.href = item.dataUrl;
-  a.download = item.name;
-  a.click();
-}
+    const urlVal = document.getElementById("url-val-"+sectionName).value.trim();
+    const urlName = document.getElementById("url-name-"+sectionName).value.trim() || urlVal;
+    
+    if (!urlVal) { 
+      showNotif("❌ الرجاء إدخال الرابط أولاً", true); 
+      return; 
+    }
 
-// ========== ADD URL ==========
-async function addUrl(name) {
-  const urlVal = document.getElementById("url-val-"+name).value.trim();
-  const urlName = document.getElementById("url-name-"+name).value.trim() || urlVal;
-  if (!urlVal) { showNotif("❌ أدخل رابطاً صحيحاً", true); return; }
+    // Basic absolute link check
+    let verifiedUrl = urlVal;
+    if (!/^https?:\/\//i.test(urlVal)) {
+      verifiedUrl = 'https://' + urlVal;
+    }
 
-  const btn = document.getElementById("btn-addurl-"+name);
-  if (btn) btn.disabled = true;
-  showLoading("جاري الحفظ...");
+    showLoading("جاري إضافة الرابط السحابي...");
 
-  const item = {
-    id: Date.now() + "_" + Math.random().toString(36).slice(2),
-    type: "url",
-    name: urlName,
-    url: urlVal,
-    date: new Date().toLocaleDateString("ar-SA")
-  };
-  data[name].push(item);
-  saveLocal();
-  renderSection(name);
-  await addToSheet(name, item);
-  hideLoading();
-  showNotif("✅ تم إضافة الرابط");
-  updateCounts();
-}
+    try {
+      const itemId = Date.now() + "_" + Math.random().toString(36).slice(2);
+      const itemData = {
+        section: sectionName,
+        type: "url",
+        name: urlName,
+        url: verifiedUrl,
+        date: new Date().toLocaleDateString("ar-SA"),
+        createdAt: Date.now()
+      };
 
-// ========== DELETE ==========
-async function deleteItem(name, i) {
-  if (!confirm("هل تريد حذف هذا العنصر؟")) return;
-  showLoading("جاري الحذف...");
-  const item = data[name][i];
-  data[name].splice(i, 1);
-  saveLocal();
-  renderSection(name);
-  await deleteFromSheet(name, item.id);
-  hideLoading();
-  showNotif("🗑 تم الحذف");
-  updateCounts();
-}
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'furqan_items', itemId);
+      await setDoc(docRef, itemData);
 
-// ========== NOTIF ==========
-function showNotif(msg, isErr) {
-  const n = document.getElementById("notif");
-  n.textContent = msg;
-  n.className = "notif" + (isErr ? " err" : "");
-  n.style.display = "block";
-  setTimeout(() => n.style.display = "none", 2800);
-}
+      hideLoading();
+      showNotif("✅ تم إضافة الرابط بنجاح ومزامنته!");
+      
+      // Reset inputs
+      document.getElementById("url-val-"+sectionName).value = "";
+      document.getElementById("url-name-"+sectionName).value = "";
+    } catch (err) {
+      console.error("Error saving URL:", err);
+      hideLoading();
+      showNotif("⚠️ حدث خطأ أثناء حفظ الرابط", true);
+    }
+  }
+
+  // DELETE HANDLER (Uses premium Custom Modal instead of browser confirm)
+  function deleteItem(sectionName, itemId) {
+    showConfirmModal(
+      "تأكيد الحذف",
+      "هل أنت متأكد من رغبتك في حذف هذا العنصر؟ سيتم حذفه نهائياً لدى الطرف الآخر أيضاً بشكل فوري.",
+      async () => {
+        closeConfirmModal();
+        showLoading("جاري الحذف نهائياً...");
+        try {
+          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'furqan_items', itemId);
+          await deleteDoc(docRef);
+          hideLoading();
+          showNotif("🗑 تم حذف العنصر من السحابة");
+        } catch (err) {
+          console.error("Error deleting item:", err);
+          hideLoading();
+          showNotif("⚠️ فشل الحذف من قاعدة البيانات", true);
+        }
+      }
+    );
+  }
+
+  // DOWNLOAD HANDLER (Decodes base64 back)
+  function downloadFile(itemId) {
+    const item = itemsList.find(x => x.id === itemId);
+    if (!item || !item.dataUrl) return;
+    const a = document.createElement("a");
+    a.href = item.dataUrl;
+    a.download = item.name;
+    a.click();
+  }
+
+  // CUSTOM DIALOG & MODAL LOGIC
+  function showConfirmModal(title, text, onConfirm) {
+    document.getElementById("confirm-title").textContent = title;
+    document.getElementById("confirm-text").textContent = text;
+    
+    const confirmBtn = document.getElementById("confirm-yes-btn");
+    confirmBtn.className = "btn-modal-confirm"; // reset class
+    confirmBtn.textContent = "تأكيد الحذف";
+    confirmBtn.onclick = onConfirm;
+
+    document.getElementById("confirm-modal").classList.add("show");
+  }
+
+  function showCustomAlertModal(title, text) {
+    document.getElementById("confirm-title").textContent = title;
+    document.getElementById("confirm-text").textContent = text;
+    
+    const confirmBtn = document.getElementById("confirm-yes-btn");
+    confirmBtn.textContent = "حسناً فهمت";
+    confirmBtn.className = "btn-modal-cancel"; // Style like action dismiss
+    confirmBtn.onclick = closeConfirmModal;
+
+    document.getElementById("confirm-modal").classList.add("show");
+  }
+
+  function closeConfirmModal() {
+    document.getElementById("confirm-modal").classList.remove("show");
+  }
+
+  // HELPERS
+  function showLoading(msg) {
+    document.getElementById("loading-text").textContent = msg || "جاري التحميل...";
+    document.getElementById("loading-overlay").classList.add("show");
+  }
+  
+  function hideLoading() {
+    document.getElementById("loading-overlay").classList.remove("show");
+  }
+
+  function showNotif(msg, isErr) {
+    const n = document.getElementById("notif");
+    n.textContent = msg;
+    n.className = "notif" + (isErr ? " err" : "");
+    n.style.display = "block";
+    setTimeout(() => n.style.display = "none", 3000);
+  }
+
+  function escHtml(str) {
+    return (str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  function getFileIcon(name) {
+    if (!name) return "ti-file";
+    const ext = name.split(".").pop().toLowerCase();
+    if (ext==="pdf") return "ti-file-type-pdf";
+    if (["doc","docx"].includes(ext)) return "ti-file-type-doc";
+    if (["xls","xlsx"].includes(ext)) return "ti-file-type-xls";
+    if (["png","jpg","jpeg","gif","webp"].includes(ext)) return "ti-photo";
+    if (["mp4","mov","avi","mkv"].includes(ext)) return "ti-video";
+    if (["zip","rar","7z"].includes(ext)) return "ti-file-zip";
+    if (["ppt","pptx"].includes(ext)) return "ti-presentation";
+    return "ti-file";
+  }
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1048576) return (bytes/1024).toFixed(1) + " KB";
+    return (bytes/1048576).toFixed(1) + " MB";
+  }
 </script>
 </body>
 </html>
